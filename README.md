@@ -1,6 +1,6 @@
 # Copilot Metrics via GitHub App
 
-This script generates a GitHub App JWT, exchanges it for an installation token, and calls the Copilot enterprise usage metrics API.
+This script generates a GitHub App JWT, exchanges it for an installation token, retrieves the latest 28‑day enterprise Copilot usage report links, and downloads the report data.
 
 ## Setup: Create the Enterprise GitHub App and collect IDs
 
@@ -62,14 +62,14 @@ python copilot_metrics.py \
   --app-id <GITHUB_APP_ID> \
   --private-key <PATH_TO_PRIVATE_KEY_PEM> \
   --installation-id <APP_INSTALLATION_ID> \
-  --org <GITHUB_ORG>
+  --enterprise <ENTERPRISE_SLUG>
 ```
 
 ### Arguments
 
 - `--app-id`: GitHub App ID.
 - `--private-key`: Path to the GitHub App private key PEM file.
-- `--installation-id`: GitHub App installation ID for the target org.
-- `--org`: GitHub organization name.
+- `--installation-id`: GitHub App installation ID for the enterprise installation.
+- `--enterprise`: GitHub enterprise slug (used for enterprise metrics endpoint).
 - `--api-base`: Optional GitHub API base URL (default: https://api.github.com).
 - `--output`: Optional file path to write the JSON response.
