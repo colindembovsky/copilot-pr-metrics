@@ -55,6 +55,19 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Optional: test.env sample
+
+If you prefer not to pass args, create a test.env file in the repo root:
+
+```dotenv
+APP_ID=123456
+INSTALLATION_ID=987654321
+PRIVATE_KEY=/path/to/private-key.pem
+ENTERPRISE=your-enterprise-slug
+API_BASE=https://api.github.com
+OUTPUT=metrics-YYYY-MM-DD.json
+```
+
 ## 3) Invoke the script
 
 ```bash
