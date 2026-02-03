@@ -2,6 +2,13 @@
 
 This script generates a GitHub App JWT, exchanges it for an installation token, retrieves the latest 28‑day enterprise Copilot usage report links, and downloads the report data.
 
+## Sample Chart
+
+Besides downloading the Enterprise usage summary for the past 28 days, the script also visualizes PR metrics for Copilot Coding Agent (CCA) and Copilot Code Review (CCR) showing how many PRs have been created/reviewed by humans and by Copilot.
+
+![Sample PR summary](sample-chart.png)
+
+
 ## Setup: Create the Enterprise GitHub App and collect IDs
 
 ### 1) Create the Enterprise GitHub App
