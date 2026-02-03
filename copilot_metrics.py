@@ -115,22 +115,25 @@ def write_pr_summary_chart(timeseries: list[Dict[str, Any]], output_path: str) -
     created_human = [max(total - copilot, 0) for total, copilot in zip(created_total, created_by_cca)]
 
     fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    x = list(range(len(days)))
+    width = 0.4
 
-    axes[0].plot(days, reviewed_human, color="#1f77b4", label="Human")
-    axes[0].plot(days, reviewed_by_ccr, color="#ff7f0e", label="CCR")
+    axes[0].bar([val - width / 2 for val in x], reviewed_human, width=width, color="#1f77b4", label="Human")
+    axes[0].bar([val + width / 2 for val in x], reviewed_by_ccr, width=width, color="#ff7f0e", label="CCR")
     axes[0].set_title("CCR Summary")
     axes[0].set_ylabel("PRs")
     axes[0].legend(loc="upper left")
     axes[0].grid(True, axis="y", alpha=0.3)
 
-    axes[1].plot(days, created_human, color="#1f77b4", label="Human")
-    axes[1].plot(days, created_by_cca, color="#ff7f0e", label="CCA")
+    axes[1].bar([val - width / 2 for val in x], created_human, width=width, color="#1f77b4", label="Human")
+    axes[1].bar([val + width / 2 for val in x], created_by_cca, width=width, color="#ff7f0e", label="CCA")
     axes[1].set_title("CCA Summary")
     axes[1].set_ylabel("PRs")
     axes[1].legend(loc="upper left")
     axes[1].grid(True, axis="y", alpha=0.3)
 
-    plt.xticks(rotation=45, ha="right")
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(days, rotation=45, ha="right")
     plt.tight_layout()
     fig.savefig(output_path, dpi=150)
     plt.close(fig)
