@@ -8,6 +8,37 @@ Besides downloading the Enterprise usage summary for the past 28 days, the scrip
 
 ![Sample PR summary](sample-chart.png)
 
+## Web frontend (upload + interactive charts)
+
+The repo now includes a static web app in `web/` that renders the same PR chart metrics interactively from an uploaded JSON file.
+
+Features:
+- Upload-first UX (starts on a JSON upload screen).
+- Same PR metrics logic as the Python chart pipeline.
+- Four interactive charts with clickable series legends to show/hide each series.
+- Filters for date range, full-detail days, and minimum reviews/day.
+- KPI tiles for Copilot intensity and efficiency.
+
+### Run the web app locally
+
+From the repo root:
+
+```bash
+python -m http.server 8000
+```
+
+Then open:
+
+- `http://localhost:8000/web/`
+
+### Test with the sample file in this repo
+
+Upload:
+
+- `my-data.json`
+
+Tip: use the **Full PR detail only** filter to focus on days that include merge/suggestion/median fields.
+
 
 ## Setup: Create the Enterprise GitHub App and collect IDs
 

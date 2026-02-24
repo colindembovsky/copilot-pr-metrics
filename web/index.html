@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Copilot PR Metrics</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="background-glow" aria-hidden="true"></div>
+    <main class="app-shell">
+      <section class="panel uploader" id="uploadPanel">
+        <p class="eyebrow">Copilot PR Metrics</p>
+        <h1>Upload a JSON report</h1>
+        <p class="muted">
+          Upload a report file to render interactive charts and KPI tiles.
+        </p>
+        <label for="fileInput" class="upload-cta">Choose JSON file</label>
+        <input id="fileInput" type="file" accept="application/json,.json" />
+        <p id="uploadMessage" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="dashboard hidden" id="dashboard">
+        <header class="panel topbar">
+          <div>
+            <p class="eyebrow">Loaded file</p>
+            <h2 id="loadedFileName">—</h2>
+          </div>
+          <div class="topbar-actions">
+            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Toggle theme">
+              <span class="theme-icon theme-sun" aria-hidden="true">☀</span>
+              <span class="theme-icon theme-moon" aria-hidden="true">☾</span>
+            </button>
+            <label for="replaceFileInput" class="upload-cta small">Replace file</label>
+            <input id="replaceFileInput" type="file" accept="application/json,.json" />
+          </div>
+        </header>
+
+        <section class="docs-link-row" aria-label="Usage metrics documentation">
+          <a
+            class="docs-link"
+            href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics/copilot-usage-metrics"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Usage metrics docs here</a
+          >
+        </section>
+
+        <section class="panel filters">
+          <div class="field">
+            <label for="startDate">Start date</label>
+            <input id="startDate" type="date" />
+          </div>
+          <div class="field">
+            <label for="endDate">End date</label>
+            <input id="endDate" type="date" />
+          </div>
+          <div class="field checkbox-field">
+            <input id="fullDetailOnly" type="checkbox" />
+            <label for="fullDetailOnly">Full PR detail only</label>
+            <span class="info-wrap" tabindex="0" aria-label="Info about Full PR detail only filter">
+              <span class="info-trigger" aria-hidden="true">i</span>
+              <span class="info-tooltip" role="tooltip">
+                Shows only days that include merge, suggestion, and median time-to-merge PR fields.
+              </span>
+            </span>
+          </div>
+          <div class="field">
+            <label for="minReviewed">Min reviews/day</label>
+            <input id="minReviewed" type="number" min="0" step="1" value="0" />
+          </div>
+        </section>
+
+        <section class="panel tab-nav" aria-label="Dashboard tabs">
+          <button class="tab-btn active" data-tab="overview" id="tabOverviewBtn" type="button">
+            Overview
+          </button>
+          <button class="tab-btn" data-tab="trends" id="tabTrendsBtn" type="button">
+            Trends
+          </button>
+        </section>
+
+        <section class="tab-panel" id="overviewTabPanel">
+          <section class="tiles" id="kpiTiles">
+            <article class="panel tile">
+              <p class="tile-title">Copilot Intensity (CCR/CCA)</p>
+              <div class="tile-grid">
+                <div class="kpi-block" id="kpiIntensityReview">
+                  <p class="metric-label">Review share</p>
+                  <p class="metric-value" id="intensityReviewShareCopilot">Copilot —</p>
+                  <p class="metric-compare">Human <span id="intensityReviewShareHuman">—</span></p>
+                  <p class="metric-delta" id="intensityReviewShareDelta">—</p>
+                </div>
+                <div class="kpi-block" id="kpiIntensityAuthored">
+                  <p class="metric-label">Authored share</p>
+                  <p class="metric-value" id="intensityAuthoredShareCopilot">Copilot —</p>
+                  <p class="metric-compare">Human <span id="intensityAuthoredShareHuman">—</span></p>
+                  <p class="metric-delta" id="intensityAuthoredShareDelta">—</p>
+                </div>
+              </div>
+            </article>
+            <article class="panel tile">
+              <p class="tile-title">Copilot Efficiency (CCR/CCA)</p>
+              <div class="tile-grid">
+                <div class="kpi-block" id="kpiEffSuggestion">
+                  <p class="metric-label">Suggestion acceptance</p>
+                  <p class="metric-value" id="effSuggestionAcceptanceCopilot">Copilot —</p>
+                  <p class="metric-compare">Human <span id="effSuggestionAcceptanceHuman">—</span></p>
+                  <p class="metric-delta" id="effSuggestionAcceptanceDelta">—</p>
+                </div>
+                <div class="kpi-block" id="kpiEffMergeSuccess">
+                  <p class="metric-label">Merge success</p>
+                  <p class="metric-value" id="effMergeSuccessCopilot">Copilot —</p>
+                  <p class="metric-compare">Human <span id="effMergeSuccessHuman">—</span></p>
+                  <p class="metric-delta" id="effMergeSuccessDelta">—</p>
+                </div>
+              </div>
+            </article>
+            <article class="panel tile">
+              <p class="tile-title">Merge Lead Time</p>
+              <div class="tile-grid tile-grid-single">
+                <div class="kpi-block" id="kpiMergeLeadTime">
+                  <p class="metric-label">Median minutes to merge</p>
+                  <p class="metric-value" id="mergeLeadTimeCopilot">Copilot —</p>
+                  <p class="metric-compare">Human <span id="mergeLeadTimeHuman">—</span></p>
+                  <p class="metric-delta" id="mergeLeadTimeDelta">—</p>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="chart-grid">
+            <article class="panel chart-card">
+              <h3>PR Review Summary</h3>
+              <canvas id="chartReview"></canvas>
+            </article>
+            <article class="panel chart-card">
+              <h3>PR Throughput</h3>
+              <canvas id="chartThroughput"></canvas>
+            </article>
+            <article class="panel chart-card">
+              <h3>Review Suggestions & Acceptance</h3>
+              <canvas id="chartSuggestions"></canvas>
+            </article>
+            <article class="panel chart-card">
+              <h3>Median Time to Merge (minutes)</h3>
+              <canvas id="chartMerge"></canvas>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel hidden" id="trendsTabPanel">
+          <section class="chart-grid chart-grid-trends">
+            <article class="panel chart-card">
+              <h3>Intensity Trend (% over time)</h3>
+              <canvas id="chartIntensityTrend"></canvas>
+            </article>
+            <article class="panel chart-card">
+              <h3>Efficiency Trend (% over time)</h3>
+              <canvas id="chartEfficiencyTrend"></canvas>
+            </article>
+            <article class="panel chart-card">
+              <h3>Cumulative CCR Suggestion Activity</h3>
+              <canvas id="chartCumulativeTrend"></canvas>
+            </article>
+          </section>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
