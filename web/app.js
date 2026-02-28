@@ -6,13 +6,13 @@ const dashboard = document.getElementById("dashboard");
 const loadedFileName = document.getElementById("loadedFileName");
 const themeToggle = document.getElementById("themeToggle");
 const tabOverviewBtn = document.getElementById("tabOverviewBtn");
-const tabTrendsBtn = document.getElementById("tabTrendsBtn");
+const tabCliBtn = document.getElementById("tabCliBtn");
 const overviewTabPanel = document.getElementById("overviewTabPanel");
 const trendsTabPanel = document.getElementById("trendsTabPanel");
+const cliTabPanel = document.getElementById("cliTabPanel");
 
 const startDateInput = document.getElementById("startDate");
 const endDateInput = document.getElementById("endDate");
-const fullDetailOnlyInput = document.getElementById("fullDetailOnly");
 const minReviewedInput = document.getElementById("minReviewed");
 
 const kpiElements = {
@@ -48,6 +48,13 @@ const kpiElements = {
   },
 };
 
+const cliKpiElements = {
+  dailyActiveUsers: document.getElementById("cliDailyActiveUsersValue"),
+  sessionCount: document.getElementById("cliSessionCountValue"),
+  requestCount: document.getElementById("cliRequestCountValue"),
+  avgTokensPerRequest: document.getElementById("cliAvgTokensPerRequestValue"),
+};
+
 const chartElements = {
   review: document.getElementById("chartReview"),
   throughput: document.getElementById("chartThroughput"),
@@ -56,6 +63,9 @@ const chartElements = {
   intensityTrend: document.getElementById("chartIntensityTrend"),
   efficiencyTrend: document.getElementById("chartEfficiencyTrend"),
   cumulativeTrend: document.getElementById("chartCumulativeTrend"),
+  cliUsers: document.getElementById("chartCliUsers"),
+  cliActivity: document.getElementById("chartCliActivity"),
+  cliTokens: document.getElementById("chartCliTokens"),
 };
 
 const state = {
@@ -68,13 +78,13 @@ const THEME_STORAGE_KEY = "copilot-pr-theme";
 
 fileInput?.addEventListener("change", handleFileSelection);
 replaceFileInput?.addEventListener("change", handleFileSelection);
-tabOverviewBtn?.addEventListener("click", () => setActiveTab("overview"));
-tabTrendsBtn?.addEventListener("click", () => setActiveTab("trends"));
+tabOverviewBtn?.addEventListener("click", () => setActiveTab("pr"));
+tabCliBtn?.addEventListener("click", () => setActiveTab("cli"));
 themeToggle?.addEventListener("click", toggleTheme);
 
 initializeTheme();
 
-[startDateInput, endDateInput, fullDetailOnlyInput, minReviewedInput].forEach((el) => {
+[startDateInput, endDateInput, minReviewedInput].forEach((el) => {
   el?.addEventListener("input", applyFiltersAndRender);
   el?.addEventListener("change", applyFiltersAndRender);
 });
@@ -103,7 +113,7 @@ async function handleFileSelection(event) {
     loadedFileName.textContent = file.name;
     uploadPanel.classList.add("hidden");
     dashboard.classList.remove("hidden");
-    setActiveTab("overview");
+    setActiveTab("pr");
 
     uploadMessage.textContent = "";
     applyFiltersAndRender();
@@ -115,12 +125,13 @@ async function handleFileSelection(event) {
 }
 
 function setActiveTab(tabName) {
-  const isOverview = tabName === "overview";
-  const isTrends = tabName === "trends";
-  tabOverviewBtn.classList.toggle("active", isOverview);
-  tabTrendsBtn.classList.toggle("active", isTrends);
-  overviewTabPanel.classList.toggle("hidden", !isOverview);
-  trendsTabPanel.classList.toggle("hidden", !isTrends);
+  const isPr = tabName === "pr";
+  const isCli = tabName === "cli";
+  tabOverviewBtn.classList.toggle("active", isPr);
+  tabCliBtn.classList.toggle("active", isCli);
+  overviewTabPanel.classList.toggle("hidden", !isPr);
+  trendsTabPanel.classList.toggle("hidden", !isPr);
+  cliTabPanel.classList.toggle("hidden", !isCli);
 }
 
 function initializeTheme() {
@@ -184,6 +195,42 @@ function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+function mergeCliTotals(target, value) {
+  if (!value || typeof value !== "object") {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      mergeCliTotals(target, item);
+    }
+    return;
+  }
+
+  if (hasOwn(value, "session_count") || hasOwn(value, "request_count") || hasOwn(value, "token_usage")) {
+    target.session_count += toNumber(value.session_count);
+    target.request_count += toNumber(value.request_count);
+    target.prompt_tokens_sum += toNumber(value?.token_usage?.prompt_tokens_sum);
+    target.output_tokens_sum += toNumber(value?.token_usage?.output_tokens_sum);
+    return;
+  }
+
+  for (const nested of Object.values(value)) {
+    mergeCliTotals(target, nested);
+  }
+}
+
+function extractCliTotals(dayTotal) {
+  const totals = {
+    session_count: 0,
+    request_count: 0,
+    prompt_tokens_sum: 0,
+    output_tokens_sum: 0,
+  };
+  mergeCliTotals(totals, dayTotal?.totals_by_cli);
+  return totals;
+}
+
 function buildPrTimeseries(reports) {
   const byDay = {};
 
@@ -214,11 +261,18 @@ function buildPrTimeseries(reports) {
           median_minutes_to_merge_count: 0,
           median_minutes_to_merge_copilot_authored_weighted_sum: 0,
           median_minutes_to_merge_copilot_authored_count: 0,
+          daily_active_users: 0,
+          daily_active_cli_users: 0,
+          cli_session_count: 0,
+          cli_request_count: 0,
+          cli_prompt_tokens_sum: 0,
+          cli_output_tokens_sum: 0,
           has_full_detail: false,
         };
       }
 
       const entry = byDay[day];
+      const cliTotals = extractCliTotals(dayTotal);
 
       entry.total_reviewed += toNumber(pullRequests.total_reviewed);
       entry.total_reviewed_by_copilot += toNumber(pullRequests.total_reviewed_by_copilot);
@@ -230,6 +284,12 @@ function buildPrTimeseries(reports) {
       entry.total_applied_suggestions += toNumber(pullRequests.total_applied_suggestions);
       entry.total_copilot_suggestions += toNumber(pullRequests.total_copilot_suggestions);
       entry.total_copilot_applied_suggestions += toNumber(pullRequests.total_copilot_applied_suggestions);
+      entry.daily_active_users += toNumber(dayTotal.daily_active_users);
+      entry.daily_active_cli_users += toNumber(dayTotal.daily_active_cli_users);
+      entry.cli_session_count += cliTotals.session_count;
+      entry.cli_request_count += cliTotals.request_count;
+      entry.cli_prompt_tokens_sum += cliTotals.prompt_tokens_sum;
+      entry.cli_output_tokens_sum += cliTotals.output_tokens_sum;
 
       const mergeCount = toNumber(pullRequests.total_merged);
       const medianMinutes = pullRequests.median_minutes_to_merge;
@@ -278,6 +338,12 @@ function buildPrTimeseries(reports) {
         total_applied_suggestions: entry.total_applied_suggestions,
         total_copilot_suggestions: entry.total_copilot_suggestions,
         total_copilot_applied_suggestions: entry.total_copilot_applied_suggestions,
+        daily_active_users: entry.daily_active_users,
+        daily_active_cli_users: entry.daily_active_cli_users,
+        cli_session_count: entry.cli_session_count,
+        cli_request_count: entry.cli_request_count,
+        cli_prompt_tokens_sum: entry.cli_prompt_tokens_sum,
+        cli_output_tokens_sum: entry.cli_output_tokens_sum,
         median_minutes_to_merge:
           entry.median_minutes_to_merge_count > 0
             ? entry.median_minutes_to_merge_weighted_sum / entry.median_minutes_to_merge_count
@@ -303,7 +369,6 @@ function setupDateFilters(rows) {
 
   startDateInput.value = firstDay;
   endDateInput.value = lastDay;
-  fullDetailOnlyInput.checked = false;
   minReviewedInput.value = "0";
 }
 
@@ -314,7 +379,6 @@ function applyFiltersAndRender() {
 
   const startDay = startDateInput.value;
   const endDay = endDateInput.value;
-  const fullDetailOnly = fullDetailOnlyInput.checked;
   const minReviewed = Math.max(0, parseInt(minReviewedInput.value || "0", 10) || 0);
 
   state.filteredRows = state.rows.filter((row) => {
@@ -324,9 +388,6 @@ function applyFiltersAndRender() {
     if (endDay && row.day > endDay) {
       return false;
     }
-    if (fullDetailOnly && !row.has_full_detail) {
-      return false;
-    }
     if (row.total_reviewed < minReviewed) {
       return false;
     }
@@ -334,6 +395,7 @@ function applyFiltersAndRender() {
   });
 
   renderTiles(state.filteredRows);
+  renderCliTiles(state.filteredRows);
   renderCharts(state.filteredRows);
 }
 
@@ -358,6 +420,17 @@ function formatMinutes(value) {
 
   const rounded = value >= 100 ? value.toFixed(0) : value.toFixed(1);
   return `${rounded} min`;
+}
+
+function formatCount(value, fractionDigits = 0) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  return Number(value).toLocaleString(undefined, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
 }
 
 function formatDelta(copilotValue, humanValue) {
@@ -505,6 +578,42 @@ function renderTiles(rows) {
   renderComparedDurationKpi(kpiElements.mergeLeadTime, mergeMedianCopilot, mergeMedianHuman, "CCA");
 }
 
+function renderCliTiles(rows) {
+  if (!rows.length) {
+    cliKpiElements.dailyActiveUsers.textContent = "—";
+    cliKpiElements.sessionCount.textContent = "—";
+    cliKpiElements.requestCount.textContent = "—";
+    cliKpiElements.avgTokensPerRequest.textContent = "—";
+    return;
+  }
+
+  const totals = rows.reduce(
+    (acc, row) => {
+      acc.dailyActiveCliUsers += row.daily_active_cli_users;
+      acc.sessionCount += row.cli_session_count;
+      acc.requestCount += row.cli_request_count;
+      acc.promptTokens += row.cli_prompt_tokens_sum;
+      acc.outputTokens += row.cli_output_tokens_sum;
+      return acc;
+    },
+    {
+      dailyActiveCliUsers: 0,
+      sessionCount: 0,
+      requestCount: 0,
+      promptTokens: 0,
+      outputTokens: 0,
+    }
+  );
+
+  const avgDailyActiveCliUsers = ratio(totals.dailyActiveCliUsers, rows.length);
+  const avgTokensPerRequest = ratio(totals.promptTokens + totals.outputTokens, totals.requestCount);
+
+  cliKpiElements.dailyActiveUsers.textContent = formatCount(avgDailyActiveCliUsers, 1);
+  cliKpiElements.sessionCount.textContent = formatCount(totals.sessionCount);
+  cliKpiElements.requestCount.textContent = formatCount(totals.requestCount);
+  cliKpiElements.avgTokensPerRequest.textContent = formatCount(avgTokensPerRequest, 2);
+}
+
 function destroyCharts() {
   for (const chart of state.chartInstances) {
     chart.destroy();
@@ -649,6 +758,18 @@ function renderCharts(rows) {
     cumulativeCopilotSuggestions.push(runningCopilotSuggestions);
     cumulativeCopilotAppliedSuggestions.push(runningCopilotApplied);
   }
+
+  const cliDailyActiveUsers = rows.map((row) => row.daily_active_cli_users);
+  const allDailyActiveUsers = rows.map((row) => row.daily_active_users);
+  const cliSessionCount = rows.map((row) => row.cli_session_count);
+  const cliRequestCount = rows.map((row) => row.cli_request_count);
+  const cliPromptTokens = rows.map((row) => row.cli_prompt_tokens_sum);
+  const cliOutputTokens = rows.map((row) => row.cli_output_tokens_sum);
+  const cliAvgTokensPerRequest = rows.map((row) =>
+    row.cli_request_count
+      ? (row.cli_prompt_tokens_sum + row.cli_output_tokens_sum) / row.cli_request_count
+      : 0
+  );
 
   const reviewChart = new Chart(chartElements.review, {
     type: "bar",
@@ -893,6 +1014,103 @@ function renderCharts(rows) {
     options: cumulativeTrendOptions,
   });
 
+  const cliUsersChart = new Chart(chartElements.cliUsers, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Daily active CLI users",
+          data: cliDailyActiveUsers,
+          borderColor: "rgba(126, 166, 255, 0.98)",
+          backgroundColor: "rgba(126, 166, 255, 0.98)",
+          tension: 0.25,
+        },
+        {
+          label: "Daily active users (all)",
+          data: allDailyActiveUsers,
+          borderColor: "rgba(121, 240, 215, 0.85)",
+          backgroundColor: "rgba(121, 240, 215, 0.85)",
+          tension: 0.25,
+        },
+      ],
+    },
+    options: buildBaseOptions(),
+  });
+
+  const cliActivityOptions = buildBaseOptions();
+  cliActivityOptions.scales.y1 = {
+    beginAtZero: true,
+    position: "right",
+    ticks: { color: "#9fb0d7" },
+    grid: { drawOnChartArea: false },
+  };
+
+  const cliActivityChart = new Chart(chartElements.cliActivity, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: "bar",
+          label: "CLI sessions",
+          data: cliSessionCount,
+          backgroundColor: "rgba(184, 157, 255, 0.82)",
+          yAxisID: "y",
+        },
+        {
+          type: "line",
+          label: "CLI requests",
+          data: cliRequestCount,
+          borderColor: "rgba(246, 216, 154, 0.95)",
+          backgroundColor: "rgba(246, 216, 154, 0.95)",
+          yAxisID: "y1",
+          tension: 0.25,
+        },
+      ],
+    },
+    options: cliActivityOptions,
+  });
+
+  const cliTokenOptions = buildBaseOptions();
+  cliTokenOptions.scales.y1 = {
+    beginAtZero: true,
+    position: "right",
+    ticks: { color: "#9fb0d7" },
+    grid: { drawOnChartArea: false },
+  };
+
+  const cliTokenChart = new Chart(chartElements.cliTokens, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: "bar",
+          label: "Prompt tokens",
+          data: cliPromptTokens,
+          backgroundColor: "rgba(121, 240, 215, 0.65)",
+          yAxisID: "y",
+        },
+        {
+          type: "bar",
+          label: "Output tokens",
+          data: cliOutputTokens,
+          backgroundColor: "rgba(126, 166, 255, 0.72)",
+          yAxisID: "y",
+        },
+        {
+          type: "line",
+          label: "Avg tokens/request",
+          data: cliAvgTokensPerRequest,
+          borderColor: "rgba(246, 216, 154, 0.95)",
+          backgroundColor: "rgba(246, 216, 154, 0.95)",
+          yAxisID: "y1",
+          tension: 0.25,
+        },
+      ],
+    },
+    options: cliTokenOptions,
+  });
+
   state.chartInstances.push(
     reviewChart,
     throughputChart,
@@ -900,6 +1118,9 @@ function renderCharts(rows) {
     mergeChart,
     intensityTrendChart,
     efficiencyTrendChart,
-    cumulativeTrendChart
+    cumulativeTrendChart,
+    cliUsersChart,
+    cliActivityChart,
+    cliTokenChart
   );
 }

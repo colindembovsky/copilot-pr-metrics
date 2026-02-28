@@ -16,8 +16,9 @@ Features:
 - Upload-first UX (starts on a JSON upload screen).
 - Same PR metrics logic as the Python chart pipeline.
 - Four interactive charts with clickable series legends to show/hide each series.
-- Filters for date range, full-detail days, and minimum reviews/day.
+- Filters for date range and minimum reviews/day.
 - KPI tiles for Copilot intensity and efficiency.
+- Dedicated CLI tab for `daily_active_cli_users` and `totals_by_cli` metrics.
 
 ### Run the web app locally
 
@@ -36,9 +37,6 @@ Then open:
 Upload:
 
 - `my-data.json`
-
-Tip: use the **Full PR detail only** filter to focus on days that include merge/suggestion/median fields.
-
 
 ## Setup: Create the Enterprise GitHub App and collect IDs
 

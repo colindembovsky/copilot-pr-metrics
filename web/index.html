@@ -57,16 +57,6 @@
             <label for="endDate">End date</label>
             <input id="endDate" type="date" />
           </div>
-          <div class="field checkbox-field">
-            <input id="fullDetailOnly" type="checkbox" />
-            <label for="fullDetailOnly">Full PR detail only</label>
-            <span class="info-wrap" tabindex="0" aria-label="Info about Full PR detail only filter">
-              <span class="info-trigger" aria-hidden="true">i</span>
-              <span class="info-tooltip" role="tooltip">
-                Shows only days that include merge, suggestion, and median time-to-merge PR fields.
-              </span>
-            </span>
-          </div>
           <div class="field">
             <label for="minReviewed">Min reviews/day</label>
             <input id="minReviewed" type="number" min="0" step="1" value="0" />
@@ -74,11 +64,11 @@
         </section>
 
         <section class="panel tab-nav" aria-label="Dashboard tabs">
-          <button class="tab-btn active" data-tab="overview" id="tabOverviewBtn" type="button">
-            Overview
+          <button class="tab-btn active" data-tab="pr" id="tabOverviewBtn" type="button">
+            PR Metrics
           </button>
-          <button class="tab-btn" data-tab="trends" id="tabTrendsBtn" type="button">
-            Trends
+          <button class="tab-btn" data-tab="cli" id="tabCliBtn" type="button">
+            CLI Metrics
           </button>
         </section>
 
@@ -164,6 +154,61 @@
             <article class="panel chart-card">
               <h3>Cumulative CCR Suggestion Activity</h3>
               <canvas id="chartCumulativeTrend"></canvas>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel hidden" id="cliTabPanel">
+          <section class="tiles">
+            <article class="panel tile">
+              <p class="tile-title">CLI Daily Active Users</p>
+              <div class="tile-grid tile-grid-single">
+                <div class="kpi-block">
+                  <p class="metric-label">Average over filtered range</p>
+                  <p class="metric-value" id="cliDailyActiveUsersValue">—</p>
+                </div>
+              </div>
+            </article>
+            <article class="panel tile">
+              <p class="tile-title">CLI Sessions</p>
+              <div class="tile-grid tile-grid-single">
+                <div class="kpi-block">
+                  <p class="metric-label">Total over filtered range</p>
+                  <p class="metric-value" id="cliSessionCountValue">—</p>
+                </div>
+              </div>
+            </article>
+            <article class="panel tile">
+              <p class="tile-title">CLI Requests</p>
+              <div class="tile-grid tile-grid-single">
+                <div class="kpi-block">
+                  <p class="metric-label">Total over filtered range</p>
+                  <p class="metric-value" id="cliRequestCountValue">—</p>
+                </div>
+              </div>
+            </article>
+            <article class="panel tile">
+              <p class="tile-title">CLI Avg Tokens / Request</p>
+              <div class="tile-grid tile-grid-single">
+                <div class="kpi-block">
+                  <p class="metric-label">Prompt + output token average</p>
+                  <p class="metric-value" id="cliAvgTokensPerRequestValue">—</p>
+                </div>
+              </div>
+            </article>
+          </section>
+          <section class="chart-grid chart-grid-trends">
+            <article class="panel chart-card">
+              <h3>CLI Active Users</h3>
+              <canvas id="chartCliUsers"></canvas>
+            </article>
+            <article class="panel chart-card">
+              <h3>CLI Sessions & Requests</h3>
+              <canvas id="chartCliActivity"></canvas>
+            </article>
+            <article class="panel chart-card">
+              <h3>CLI Token Usage</h3>
+              <canvas id="chartCliTokens"></canvas>
             </article>
           </section>
         </section>
